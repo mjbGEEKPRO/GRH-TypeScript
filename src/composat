@@ -1,0 +1,39 @@
+import { object, string } from "yup";
+
+const schema = object().shape({
+  nom: string()
+    .min(2, "le nom est trop court")
+    .matches(/^[A-Za-zÀ-ÿ\s'-]+$/, "le nom ne doit contenir que des lettres")
+    .required("Veuillez renseigner le nom"),
+    prenom: string()
+    .min(2, "le prenom est trop court")
+    .matches(/^[A-Za-zÀ-ÿ\s'-]+$/, "le prenom ne doit contenir que des lettres")
+    .required("Veuillez renseigner le prénom"),
+    message: string()
+      .matches(/^[A-Za-zÀ-ÿ\s'-0-9]+$/, "le message ne doit contenir que des lettres")
+      .required("Veuillez renseigner le message"),
+  email: string()
+    .matches(
+      /^[a-z][a-z0-9._-]*@gmail.com$/,
+      "L'e-mail doit commencer par une lettre et être en minuscules exemple (jeremy@gmail.com)"
+    )
+    .required("L'adresse email est requise"),
+  poste: string()
+    .matches(/^[A-Za-zÀ-ÿ\s'-]+$/, "le poste ne doit contenir que des lettres")
+    .required("Le poste est requis"),
+  telephone: string()
+    .matches(
+      /^6\d{8}$/,
+      "le numéro doit commencer par 6 et contenir 9 chiffres"
+    )
+    .required("Veuillez renseigner le numéro de téléphone"),
+  password: string()
+    .required("Le mot de passe est requis")
+    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+    .matches(/[a-z]/, "Au moins une lettre minuscule")
+    .matches(/[A-Z]/, "Au moins une lettre majuscule")
+    .matches(/\d/, "Au moins un chiffre")
+    .matches(/[@$!%*#?&]/, "Au moins un caractère spécial (@$!%*?&)"),
+});
+
+export default schema;
