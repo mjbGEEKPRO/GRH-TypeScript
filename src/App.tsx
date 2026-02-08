@@ -1,27 +1,29 @@
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // import RegisterForm from "./exoserdi/form";
-import ForgetPassword from "./composant/interface/mot_de_passe_oubli";
+import ForgetPassword from "./Authentification/mot_de_passe_oubli";
 import Formulaire from "./Authentification/formulaire";
 import Connexion from "./Authentification/connexion";
 import Employer from "./composant/employer/employer";
 // import SerdiFormationCarousel from "./composant/mjb/mjb";
 import Code from "./Authentification/code";
-import Admin from "./composant/interface/admin/admin";
+import Admin from "./composant/admin/admin";
 // import AdminCode from "./Authentification/codeAdmin";
 // import Dashboard from "./exoserdi/dashbordTest";
 // import LogoutManager from "./composant/LogoutManager";
-import Permissions from "./composant/interface/permission";
+import Permissions from "./composant/admin/permission";
 // import ProjectManagement from "./composant/interface/admin/projectModal";
 import ModalCompteDesactive from "./composant/interface/deasabled/compte";
 // import DarkThemeDemo from "./exoserdi/demoContexte";
 // Importer le système de permissions
 import { PermissionProvider } from "./contexte/contextPermissions/PermissionContext";
-import { authUtils } from "./utils/redirectionForm";
+import { authUtils } from "./utils/Intercepteur";
 //import du provider de thème
 import { ThemeProvider } from "./contexte/contextTheme/ThemeContext";
 //import du modal de creattion des departements et des post
 import Departement_poste_Create from "./composant/departement/departement";
+//import du support public
+import PublicSupportInterface from "./composant/supportSystem/PublicSupportSystem";
 
 function App() {
   useEffect(() => {
@@ -43,6 +45,10 @@ function App() {
             <Route path="/departement" element={<Departement_poste_Create />} />
             {/* Routes protégées (avec vérification de permissions) */}
             <Route path="/admin" element={<Admin />} />
+            <Route
+              path="/support/access"
+              element={<PublicSupportInterface />}
+            />
             <Route path="/permission" element={<Permissions />} />
             {/* <Route path="/dashbordTest" element={<Dashboard />} /> */}
             {/* <Route path="/tacheProjet" element={<ProjectManagement />} /> */}
@@ -56,4 +62,3 @@ function App() {
 }
 
 export default App;
-

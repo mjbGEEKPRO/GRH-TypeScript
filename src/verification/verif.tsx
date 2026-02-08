@@ -10,8 +10,8 @@ interface LoginFormData {
 const validateSchem: ObjectSchema<LoginFormData> = object().shape({
   email_pro: string()
     .matches(
-      /@gmail\.com$/,
-      "L'adresse email doit être sous ce format (exp@gmail.com)"
+      /@serdi\.cm$/,
+      "L'adresse email doit être sous ce format (exp@serdi.cm)"
     )
     .required("Veuillez renseigner l'email"),
 

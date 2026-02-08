@@ -31,8 +31,8 @@ const schema: ObjectSchema<ValidationSchemaType> = object().shape({
     .required("Le poste est requis"),
   telephone: string()
     .matches(
-      /^6\d{8}$/,
-      "le numéro doit commencer par 6 et contenir 9 chiffres"
+      /^[62]\d{8}$/,
+      "le numéro doit commencer par 6 ou 2 et contenir 9 chiffres"
     )
     .required("Veuillez renseigner le numéro de téléphone"),
   date_naissance: date()

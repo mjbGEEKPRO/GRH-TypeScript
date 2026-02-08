@@ -1,3 +1,26 @@
 {
-      "users":[]
+  "users": [
+    {
+      "id": 2,
+      "nom": "fokou",
+      "prenom": "david",
+      "email": "christelletetieu@gmail.com",
+      "telephone": "674542313",
+      "statut": true,
+      "role": "Développeur",
+      "role_id": 2,
+      "departement": "Informatique"
+    },
+    {
+      "id": 3,
+      "nom": "kembel",
+      "prenom": "darylle",
+      "email": "kembel@gmail.com",
+      "telephone": "689324356",
+      "statut": false,
+      "role": "Marketiste",
+      "role_id": 5,
+      "departement": "Marketing"
+    }
+  ]
 }

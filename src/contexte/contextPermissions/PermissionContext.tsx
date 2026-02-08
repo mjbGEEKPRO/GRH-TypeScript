@@ -7,7 +7,7 @@ import React, {
   ReactNode,
 } from "react";
 import api from "../../utils/api";
-import { authUtils } from "../../utils/redirectionForm";
+import { authUtils } from "../../utils/Intercepteur";
 
 interface Permission {
   id?: string | number;
@@ -32,14 +32,14 @@ interface PermissionProviderProps {
 }
 
 const PermissionContext = createContext<PermissionContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 export const usePermissions = (): PermissionContextValue => {
   const context = useContext(PermissionContext);
   if (!context) {
     throw new Error(
-      "usePermissions doit être utilisé dans un PermissionProvider"
+      "usePermissions doit être utilisé dans un PermissionProvider",
     );
   }
   return context;
@@ -72,11 +72,9 @@ export const PermissionProvider: React.FC<PermissionProviderProps> = ({
       });
 
       if (response.data.success) {
-        console.log("permission reçu ", response.data.permissions);
         setPermissions(response.data.permissions || []);
       }
     } catch (err: any) {
-      console.error("❌ Erreur permissions:", err);
       setError(err.message);
       setPermissions([]);
     } finally {
@@ -85,13 +83,9 @@ export const PermissionProvider: React.FC<PermissionProviderProps> = ({
   }, []);
 
   useEffect(() => {
-    console.log("🔄 PermissionContext: Initialisation");
-    console.log("authentifier ", authUtils.isAuthenticated());
     if (authUtils.isAuthenticated()) {
-      console.log("chargement des permissions...");
       loadPermissions();
     } else {
-      console.log("pas authentifier");
       setPermissions([]);
       setLoading(false);
     }
@@ -101,10 +95,10 @@ export const PermissionProvider: React.FC<PermissionProviderProps> = ({
     (permissionName: string): boolean => {
       if (!permissionName) return false;
       return permissions.some(
-        (perm) => perm.nom === permissionName || perm.slug === permissionName
+        (perm) => perm.nom === permissionName || perm.slug === permissionName,
       );
     },
-    [permissions]
+    [permissions],
   );
 
   const hasAllPermissions = useCallback(
@@ -113,7 +107,7 @@ export const PermissionProvider: React.FC<PermissionProviderProps> = ({
         return false;
       return permissionNames.every((nom) => hasPermission(nom));
     },
-    [hasPermission]
+    [hasPermission],
   );
 
   const hasAnyPermission = useCallback(
@@ -122,7 +116,7 @@ export const PermissionProvider: React.FC<PermissionProviderProps> = ({
         return false;
       return permissionNames.some((nom) => hasPermission(nom));
     },
-    [hasPermission]
+    [hasPermission],
   );
 
   const clearPermissions = useCallback((): void => {

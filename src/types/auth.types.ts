@@ -22,6 +22,8 @@ export interface LoginCredentials {
 export interface LoginResponse {
   success: boolean;
   message: string;
+  warning: string;
+  remaining_attempts: string;
   user: User;
   access_token: string;
   expires_at: string;

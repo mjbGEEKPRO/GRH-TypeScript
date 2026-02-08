@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { authUtils } from "../../utils/redirectionForm";
+import { authUtils } from "../../utils/Intercepteur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getGreeting } from "../../utils/greeting";
-import Settings from "../interface/setting";
+import Settings from "../settings/setting";
 import api from "../../utils/api";
 import Modal from "../interface/logout/modal";
-import ThemeToggle from "../../component/ThemeToggle";
+import ThemeToggle from "../../Toggle_guard/ThemeToggle";
+import SupportButton from "../Button/button";
+import UserSupportSystem from "../supportSystem/UserSupportSystem";
 
 interface User {
   id: string | number;
@@ -66,6 +68,7 @@ interface ModalContent {
 type TabType = "dashboard" | "tasks" | "projects";
 
 const Employer: React.FC = () => {
+  const [openSupport, setOpenSupport] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +182,7 @@ const Employer: React.FC = () => {
 
   const updateTaskStatus = async (
     taskId: string | number,
-    newStatus: Task["statut"]
+    newStatus: Task["statut"],
   ): Promise<void> => {
     try {
       const res = await api.patch(`/api/tasks/${taskId}/status`, {
@@ -190,7 +193,7 @@ const Employer: React.FC = () => {
         toast.success(res.data.message);
 
         const updatedTasks = myTasks.map((task) =>
-          task.id === taskId ? { ...task, statut: newStatus } : task
+          task.id === taskId ? { ...task, statut: newStatus } : task,
         );
 
         setMyTasks(updatedTasks);
@@ -247,7 +250,7 @@ const Employer: React.FC = () => {
 
   const isTaskOverdue = (
     dateEcheance: string,
-    statut: Task["statut"]
+    statut: Task["statut"],
   ): boolean => {
     return new Date(dateEcheance) < new Date() && statut !== "Terminé";
   };
@@ -257,7 +260,7 @@ const Employer: React.FC = () => {
       (task) =>
         task.project_id === projectId ||
         task.projet_id === projectId ||
-        task.projetId === projectId
+        task.projetId === projectId,
     );
   };
 
@@ -290,7 +293,7 @@ const Employer: React.FC = () => {
         <div className="space-y-3">
           {myTasks
             .filter(
-              (task) => task.priorite === "Haute" && task.statut !== "Terminé"
+              (task) => task.priorite === "Haute" && task.statut !== "Terminé",
             )
             .slice(0, 3)
             .map((task) => (
@@ -314,7 +317,7 @@ const Employer: React.FC = () => {
                     </p>
                     <span
                       className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                        task.statut
+                        task.statut,
                       )}`}
                     >
                       {task.statut}
@@ -342,7 +345,7 @@ const Employer: React.FC = () => {
               </div>
             ))}
           {myTasks.filter(
-            (task) => task.priorite === "Haute" && task.statut !== "Terminé"
+            (task) => task.priorite === "Haute" && task.statut !== "Terminé",
           ).length === 0 && (
             <div className="text-center py-8 text-gray-400 dark:text-gray-500">
               ✨ Aucune tâche prioritaire en attente
@@ -447,7 +450,7 @@ const Employer: React.FC = () => {
                     </h3>
                     <span
                       className={`text-xs px-3 py-1 rounded-full font-medium border ${getPriorityColor(
-                        task.priorite
+                        task.priorite,
                       )}`}
                     >
                       {task.priorite}
@@ -525,7 +528,7 @@ const Employer: React.FC = () => {
                 <div className="ml-6 flex flex-col items-end gap-2">
                   <span
                     className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                      task.statut
+                      task.statut,
                     )}`}
                   >
                     {task.statut}
@@ -644,7 +647,7 @@ const Employer: React.FC = () => {
                           Échéance:{" "}
                           {project.date_fin_prevue
                             ? new Date(
-                                project.date_fin_prevue
+                                project.date_fin_prevue,
                               ).toLocaleDateString()
                             : "Non définie"}
                         </span>
@@ -674,7 +677,7 @@ const Employer: React.FC = () => {
                   </div>
                   <span
                     className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                      project.statut
+                      project.statut,
                     )}`}
                   >
                     {project.statut}
@@ -716,7 +719,7 @@ const Employer: React.FC = () => {
                             </h5>
                             <span
                               className={`text-xs px-2 py-1 rounded-full font-medium border ${getPriorityColor(
-                                task.priorite
+                                task.priorite,
                               )}`}
                             >
                               {task.priorite}
@@ -728,7 +731,7 @@ const Employer: React.FC = () => {
                           </p>
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                              task.statut
+                              task.statut,
                             )}`}
                           >
                             {task.statut}
@@ -1012,7 +1015,11 @@ const Employer: React.FC = () => {
           {activeTab === "projects" && renderProjects()}
         </main>
       </div>
-
+      <SupportButton onClick={() => setOpenSupport(true)} />
+      <UserSupportSystem
+        open={openSupport}
+        onClose={() => setOpenSupport(false)}
+      />
       {/* Composant Paramètres */}
       {showSettings && (
         <Settings user={user} onClose={() => setShowSettings(false)} />

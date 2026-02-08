@@ -1,14 +1,14 @@
-import emailjs from '@emailjs/browser';
-import getGreeting from '../utils/greeting';
+import emailjs from "@emailjs/browser";
+import getGreeting from "../utils/greeting";
 
 // Configuration EmailJS (à déplacer dans .env)
 const EMAILJS_CONFIG = {
-  serviceId: 'service_agd3g1c',
+  serviceId: "service_agd3g1c",
   templates: {
-    passwordChange: 'template_16fe255',
-    taskAssignment: 'template_task123', // À remplacer par votre ID
+    passwordChange: "template_16fe255",
+    taskAssignment: "template_task123", // À remplacer par votre ID
   },
-  publicKey: 'xdfZm5dV41Ewzjb3R',
+  publicKey: "xdfZm5dV41Ewzjb3R",
 } as const;
 
 // Interfaces
@@ -27,6 +27,7 @@ interface ResetPasswordParams {
  * @param newPassword - Nouveau mot de passe temporaire
  * @returns Promise<boolean> - true si l'envoi réussit, false sinon
  */
+console.log("pret pour l'envoie");
 export const resetPass = async (
   email: string,
   nom: string,
@@ -42,20 +43,19 @@ export const resetPass = async (
     };
 
     console.log("Tentative d'envoi email vers:", email);
-    
+
     await emailjs.send(
       EMAILJS_CONFIG.serviceId,
       EMAILJS_CONFIG.templates.passwordChange,
       params,
       EMAILJS_CONFIG.publicKey
     );
-    
+
     // Délai pour s'assurer que l'email est bien envoyé
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-    
+
     console.log("✅ Email de réinitialisation envoyé avec succès");
     return true;
-    
   } catch (error: any) {
     console.error("❌ Erreur envoi email de réinitialisation:", error);
     console.error("Détails:", error.message || error);
@@ -87,8 +87,8 @@ export const sendTaskAssignment = async (
       email: email,
       task_title: taskDetails.title,
       task_description: taskDetails.description,
-      task_deadline: taskDetails.deadline || 'Non spécifié',
-      task_priority: taskDetails.priority || 'Normale',
+      task_deadline: taskDetails.deadline || "Non spécifié",
+      task_priority: taskDetails.priority || "Normale",
     };
 
     await emailjs.send(
@@ -97,10 +97,9 @@ export const sendTaskAssignment = async (
       params,
       EMAILJS_CONFIG.publicKey
     );
-    
+
     console.log("✅ Email d'assignation de tâche envoyé");
     return true;
-    
   } catch (error: any) {
     console.error("❌ Erreur envoi email d'assignation:", error);
     return false;

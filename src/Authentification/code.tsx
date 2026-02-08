@@ -6,7 +6,12 @@ import { toast, ToastContainer } from "react-toastify";
 import api from "../utils/api";
 import axios from "axios";
 import type { AxiosError } from "axios";
-import type { UserForAdmin, ApiResponse, InitState, CodeGenerationResult } from "../types/auth.types";
+import type {
+  UserForAdmin,
+  ApiResponse,
+  InitState,
+  CodeGenerationResult,
+} from "../types/auth.types";
 
 interface LocationState {
   email?: string;
@@ -19,6 +24,14 @@ interface ApiErrorResponse {
 
 const Code: React.FC = () => {
   const [code, setCode] = useState<string>("");
+  const [codeInputs, setCodeInputs] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<boolean>(false);
@@ -38,6 +51,7 @@ const Code: React.FC = () => {
 
   const generateCode = useCallback(async (): Promise<CodeGenerationResult> => {
     const codeGenerer = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("code générer  : ", codeGenerer);
     setSendCode(codeGenerer);
 
     if (email && nom) {
@@ -110,13 +124,59 @@ const Code: React.FC = () => {
     };
   }, [estValide, compteur]);
 
-  const handleInputChange = useCallback((value: string): void => {
-    const numericValue = value.replace(/[^0-9]/g, "").slice(0, 6);
-    setCode(numericValue);
-    setError("");
-  }, []);
+  const handleInputChange = useCallback(
+    (index: number, value: string): void => {
+      const numericValue = value.replace(/[^0-9]/g, "").slice(0, 1);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+      const newInputs = [...codeInputs];
+      newInputs[index] = numericValue;
+      setCodeInputs(newInputs);
+
+      const fullCode = newInputs.join("");
+      setCode(fullCode);
+      setError("");
+
+      if (numericValue && index < 5) {
+        const nextInput = document.getElementById(`code-input-${index + 1}`);
+        if (nextInput) nextInput.focus();
+      }
+    },
+    [codeInputs]
+  );
+
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ): void => {
+    if (e.key === "Backspace" && !codeInputs[index] && index > 0) {
+      const prevInput = document.getElementById(`code-input-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>): void => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").slice(0, 6);
+    if (!/^\d+$/.test(pastedData)) return;
+
+    const newInputs = pastedData
+      .split("")
+      .concat(Array(6).fill(""))
+      .slice(0, 6);
+    setCodeInputs(newInputs);
+    setCode(pastedData);
+    setError("");
+
+    const lastFilledIndex = Math.min(pastedData.length, 5);
+    const targetInput = document.getElementById(
+      `code-input-${lastFilledIndex}`
+    );
+    if (targetInput) targetInput.focus();
+  };
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
 
     if (code.length !== 6) {
@@ -139,26 +199,25 @@ const Code: React.FC = () => {
         const res = await api.post<ApiResponse>("/api/users", userForAdmin, {
           timeout: 10000,
         });
-        
+
         if (res.data.success) {
           const userForJson = res.data.user;
           await axios.post("http://localhost:5000/users", userForJson, {
             timeout: 5000,
           });
           toast.success(
-            "✅ Code vérifié avec succès  Inscription terminée avec succès !"
+            "Code vérifié avec succès ! Inscription terminée avec succès !"
           );
-
           window.location.href = "/";
         } else {
           setError(res.data.message || "Erreur lors de l'inscription");
         }
       } else {
-        setError("❌ Code incorrect, veuillez réessayer");
+        setError("Code incorrect, veuillez réessayer");
       }
     } catch (error: unknown) {
       const axiosError = error as AxiosError<ApiErrorResponse>;
-      
+
       if (axiosError.response) {
         const serverErrorMessage = axiosError.response.data.message;
         if (
@@ -167,14 +226,14 @@ const Code: React.FC = () => {
           axiosError.response.status === 401 ||
           axiosError.response.status === 404
         ) {
-          toast.info(`❌ ${serverErrorMessage}`);
+          toast.info(`${serverErrorMessage}`);
         } else if (axiosError.response.status === 500) {
-          toast.error(`❌ ${serverErrorMessage}`);
+          toast.error(`${serverErrorMessage}`);
         }
       } else {
-        toast.error("❌ Erreur de connexion");
+        toast.error("Erreur de connexion");
       }
-      
+
       if (axiosError.code === "ECONNABORTED") {
         setError("Délai d'attente dépassé.");
       } else if (axiosError.response?.status === 422) {
@@ -189,7 +248,7 @@ const Code: React.FC = () => {
 
   const handleResendCode = async (): Promise<void> => {
     if (estValide) {
-      toast.info("⏱ Le code est encore valide !");
+      toast.info("Le code est encore valide !");
       return;
     }
 
@@ -198,15 +257,16 @@ const Code: React.FC = () => {
 
     try {
       setCode("");
+      setCodeInputs(["", "", "", "", "", ""]);
       setError("");
       setSuccess(false);
       const result = await generateCode();
       if (result.emailSent) {
         resetAndStartTimer();
-        toast.success("📨 Nouveau code envoyé !");
+        toast.success("Nouveau code envoyé !");
       }
     } catch {
-      toast.error("❌ Erreur lors du renvoi du code");
+      toast.error("Erreur lors du renvoi du code");
     } finally {
       setIsResending(false);
     }
@@ -214,15 +274,10 @@ const Code: React.FC = () => {
 
   if (initState === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-12 border border-blue-100">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Chargement...
-            </h2>
-            <p className="text-gray-500">Préparation de la vérification</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
+          <div className="w-12 h-12 border-3 border-gray-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
         </div>
       </div>
     );
@@ -230,32 +285,44 @@ const Code: React.FC = () => {
 
   if (initState === "error" || !email || !userForAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-12 max-w-md border border-blue-100">
-          <div className="text-center">
-            <div className="text-6xl mb-4">❌</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Erreur</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <Link
-              to="/formulaire"
-              className="inline-block bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 px-8 rounded-full font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 shadow-lg"
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-6 h-6 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              Retour à l'inscription
-            </Link>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erreur</h2>
+          <p className="text-gray-600 mb-6 text-sm">{error}</p>
+          <Link
+            to="/formulaire"
+            className="inline-block bg-indigo-600 text-white py-2.5 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Retour à l'inscription
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-sm max-w-md w-full p-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl mb-4 shadow-lg">
+          <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-10 h-10 text-white"
+              className="w-6 h-6 text-indigo-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -268,16 +335,19 @@ const Code: React.FC = () => {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
-            Vérification
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            Vérification par email
           </h1>
-          <p className="text-gray-600 text-sm mb-1">Code envoyé à</p>
-          <p className="text-blue-600 font-semibold">
-            {email} code send {sendCode}
+          <p className="text-sm text-gray-600">
+            Code envoyé à{" "}
+            <span className="font-medium text-gray-900">{email}</span>
           </p>
+        </div>
 
-          {estValide && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-full">
+        {/* Timer Badge */}
+        {estValide && (
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
               <svg
                 className="w-4 h-4 text-amber-600"
                 fill="none"
@@ -291,117 +361,154 @@ const Code: React.FC = () => {
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="text-sm font-medium text-amber-700">
-                Code valide {compteur}s
+              <span className="text-sm font-medium text-amber-900">
+                Expire dans {compteur}s
               </span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-blue-100">
-          {/* Messages */}
-          {emailError && (
-            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-              <p className="text-orange-700 text-sm">{emailError}</p>
-            </div>
-          )}
+        {/* Alerts */}
+        {emailError && (
+          <div className="mb-6 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <p className="text-sm text-orange-800">{emailError}</p>
+          </div>
+        )}
 
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-green-700 font-medium">
-                ✓ Code vérifié ! Redirection...
-              </p>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-700">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-gray-600 text-sm font-medium mb-2">
-                Code à 6 chiffres
-              </label>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => handleInputChange(e.target.value)}
-                disabled={isLoading}
-                maxLength={6}
-                className="w-full px-6 py-4 text-center text-3xl font-bold tracking-widest bg-blue-50/50 border border-blue-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all placeholder-gray-300"
-                placeholder="000000"
-                autoFocus
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading || code.length !== 6}
-              className={`w-full py-3 px-6 rounded-full font-semibold transition-all duration-300 shadow-lg ${
-                isLoading || code.length !== 6
-                  ? "bg-gray-300 cursor-not-allowed opacity-70 text-gray-500"
-                  : "bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 hover:shadow-xl transform hover:scale-105"
-              }`}
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin h-5 w-5 mr-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Vérification...
-                </span>
-              ) : (
-                "Vérifier le code"
-              )}
-            </button>
-          </form>
-
-          {/* Resend Section */}
-          <div className="mt-6 text-center space-y-3">
-            <p className="text-gray-500 text-sm">
-              Vous n'avez pas reçu le code ?
+        {success && (
+          <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-medium text-green-900">
+              Code vérifié avec succès !
             </p>
-            <button
-              onClick={handleResendCode}
-              disabled={estValide || isLoading || isResending}
-              className="text-blue-600 hover:text-blue-700 font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isResending
-                ? "Envoi..."
-                : estValide
-                ? `Renvoyer dans ${compteur}s`
-                : "Renvoyer le code"}
-            </button>
+            <p className="text-sm text-green-700 mt-1">
+              Redirection en cours...
+            </p>
+          </div>
+        )}
 
-            <div className="pt-4 border-t border-gray-200">
-              <Link
-                to="/formulaire"
-                className="text-gray-500 hover:text-gray-700 text-sm transition-colors"
-              >
-                ← Retour à l'inscription
-              </Link>
+        {error && (
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+              Entrez le code à 6 chiffres
+            </label>
+            <div className="flex gap-2 justify-center">
+              {codeInputs.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`code-input-${index}`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleInputChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  onPaste={index === 0 ? handlePaste : undefined}
+                  disabled={isLoading || success}
+                  className={`w-12 h-12 text-center text-xl font-semibold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${
+                    error
+                      ? "border-red-300 bg-red-50 text-red-900"
+                      : success
+                      ? "border-green-300 bg-green-50 text-green-900"
+                      : digit
+                      ? "border-indigo-500 bg-indigo-50 text-gray-900"
+                      : "border-gray-300 bg-white text-gray-900"
+                  } ${
+                    isLoading || success ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  autoFocus={index === 0}
+                />
+              ))}
             </div>
           </div>
+
+          <button
+            type="submit"
+            disabled={isLoading || code.length !== 6 || success}
+            className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+              isLoading || code.length !== 6 || success
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Vérification...
+              </span>
+            ) : (
+              "Vérifier le code"
+            )}
+          </button>
+        </form>
+
+        {/* Resend Section */}
+        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <p className="text-sm text-gray-600 mb-3">
+            Vous n'avez pas reçu le code ?
+          </p>
+          <button
+            onClick={handleResendCode}
+            disabled={estValide || isLoading || isResending || success}
+            className={`text-sm font-medium transition-colors ${
+              estValide || isLoading || isResending || success
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-indigo-600 hover:text-indigo-700"
+            }`}
+          >
+            {isResending
+              ? "Envoi en cours..."
+              : estValide
+              ? `Renvoyer dans ${compteur}s`
+              : "Renvoyer le code"}
+          </button>
+        </div>
+
+        {/* Back Link */}
+        <div className="mt-4 text-center">
+          <Link
+            to="/formulaire"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Retour à l'inscription
+          </Link>
         </div>
       </div>
 
